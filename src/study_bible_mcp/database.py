@@ -1043,16 +1043,20 @@ class StudyBibleDB:
             return None
         return merge_english_verses(rows)[0]
 
-    async def get_verses_with_strongs(self, strongs: str, limit: int = 4) -> list[dict]:
-        """Find verses containing a specific Strong's number.
+    async def get_verses_with_strongs(
+        self, strongs: str, limit: int = 4, offset: int = 0
+    ) -> list[dict]:
+        """Find verses containing a specific Strong's number, in canonical order.
 
         Word data keeps STEPBible's one-letter sense suffix (H0430G), so a bare
         number also matches its suffixed forms; a suffixed number matches only
-        itself. Rows carry ``text_bsb`` (see ``attach_bsb_text``).
+        itself. ``offset`` skips that many verses (for the next page). Rows
+        carry ``text_bsb`` (see ``attach_bsb_text``).
         """
         where, patterns = self._strongs_word_data_filter(strongs)
         return await self.attach_bsb_text(await self._fetchall(
-            f"SELECT * FROM verses WHERE {where} LIMIT ?", (*patterns, limit)
+            f"SELECT * FROM verses WHERE {where} ORDER BY id LIMIT ? OFFSET ?",
+            (*patterns, limit, offset),
         ))
 
     async def count_verses_with_strongs(self, strongs: str) -> int:
